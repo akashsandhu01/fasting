@@ -1,289 +1,157 @@
-// 1) Put your Supabase creds here (Project Settings -> API)
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = supabaseJs.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-// UI refs
-const authStateEl = document.getElementById("authState");
-const btnSignOut = document.getElementById("btnSignOut");
+const authView = document.getElementById("authView");
+const appView = document.getElementById("appView");
+
+const email = document.getElementById("email");
+const password = document.getElementById("password");
 const authMsg = document.getElementById("authMsg");
-const timerMsg = document.getElementById("timerMsg");
 
-const emailEl = document.getElementById("email");
-const passwordEl = document.getElementById("password");
-const btnSignUp = document.getElementById("btnSignUp");
-const btnSignIn = document.getElementById("btnSignIn");
+const timerEl = document.getElementById("timer");
+const statusText = document.getElementById("statusText");
+const dot = document.getElementById("dot");
+const progressBar = document.getElementById("progressBar");
+const preset = document.getElementById("preset");
+const appMsg = document.getElementById("appMsg");
 
-const presetEl = document.getElementById("preset");
-const customFastHoursEl = document.getElementById("customFastHours");
-const btnStartNow = document.getElementById("btnStartNow");
-const btnEnd = document.getElementById("btnEnd");
+let sessionData = null;
+let interval = null;
 
-const timeLeftEl = document.getElementById("timeLeft");
-const sessionMetaEl = document.getElementById("sessionMeta");
-const statusDotEl = document.getElementById("statusDot");
-const statusTextEl = document.getElementById("statusText");
+/* ---------- AUTH ---------- */
 
-const sessionsTable = document.getElementById("sessionsTable");
-const sessionsBody = document.getElementById("sessionsBody");
-const listHint = document.getElementById("listHint");
+async function refreshUI() {
+  const { data:{ user } } = await supabase.auth.getUser();
 
-let tickInterval = null;
-let activeSession = null; // latest active session row
-
-function setStatus(isActive) {
-  statusDotEl.className = isActive ? "ok" : "bad";
-  statusTextEl.textContent = isActive ? "Active" : "Inactive";
-}
-
-function formatMs(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
-  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-  const ss = String(s % 60).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
-}
-
-function getFastingSeconds() {
-  const val = presetEl.value;
-  if (val === "custom") {
-    const h = Number(customFastHoursEl.value || 16);
-    return Math.max(1, h) * 3600;
+  if (!user) {
+    authView.classList.remove("hidden");
+    appView.classList.add("hidden");
+    return;
   }
-  const [fastH] = val.split(":").map(Number);
-  return fastH * 3600;
+
+  authView.classList.add("hidden");
+  appView.classList.remove("hidden");
+
+  loadActiveSession();
 }
 
-function getFastName() {
-  const val = presetEl.value;
-  if (val === "custom") return `Custom ${customFastHoursEl.value}h`;
-  return val;
-}
+document.getElementById("btnSignIn").onclick = async () => {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
+  authMsg.textContent = error ? error.message : "";
+  refreshUI();
+};
 
-async function refreshAuthUI() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
+document.getElementById("btnSignUp").onclick = async () => {
+  const { error } = await supabase.auth.signUp({
+    email: email.value,
+    password: password.value
+  });
+  authMsg.textContent = error ? error.message : "Account created. Sign in.";
+};
 
-  if (user) {
-    authStateEl.textContent = `Signed in: ${user.email}`;
-    btnSignOut.classList.remove("hidden");
-    listHint.textContent = "Loading your sessions...";
-    await loadActiveSession();
-    await loadSessions();
-  } else {
-    authStateEl.textContent = "Not signed in";
-    btnSignOut.classList.add("hidden");
-    sessionsTable.classList.add("hidden");
-    listHint.textContent = "Sign in to load your history.";
-    clearTimerUI();
-  }
-}
+document.getElementById("btnSignOut").onclick = async () => {
+  await supabase.auth.signOut();
+  location.reload();
+};
 
-function clearTimerUI() {
-  activeSession = null;
-  setStatus(false);
-  timeLeftEl.textContent = "--:--:--";
-  sessionMetaEl.textContent = "No active session";
-  if (tickInterval) clearInterval(tickInterval);
-  tickInterval = null;
-}
-
-function startTicking() {
-  if (tickInterval) clearInterval(tickInterval);
-  tickInterval = setInterval(() => {
-    if (!activeSession) return;
-    const endsAt = new Date(activeSession.ends_at).getTime();
-    const now = Date.now();
-    const remaining = endsAt - now;
-    timeLeftEl.textContent = formatMs(remaining);
-
-    // auto-complete if time passed
-    if (remaining <= 0) {
-      timeLeftEl.textContent = "00:00:00";
-      setStatus(false);
-      statusTextEl.textContent = "Completed";
-    }
-  }, 250);
-}
+/* ---------- FASTING ---------- */
 
 async function loadActiveSession() {
-  timerMsg.textContent = "";
-  const { data: { user } } = await supabaseClient.auth.getUser();
+  const { data:{ user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Get latest active session for this user
-  const { data, error } = await supabaseClient
+  const { data } = await supabase
     .from("fasting_sessions")
     .select("*")
     .eq("user_id", user.id)
     .eq("status", "active")
-    .order("started_at", { ascending: false })
-    .limit(1);
-
-  if (error) {
-    timerMsg.textContent = `Error loading active session: ${error.message}`;
-    return;
-  }
-
-  activeSession = data?.[0] ?? null;
-
-  if (!activeSession) {
-    clearTimerUI();
-    return;
-  }
-
-  setStatus(true);
-  sessionMetaEl.textContent =
-    `${activeSession.fast_name} • Started: ${new Date(activeSession.started_at).toLocaleString()} • Ends: ${new Date(activeSession.ends_at).toLocaleString()}`;
-
-  startTicking();
-}
-
-async function loadSessions() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) return;
-
-  const { data, error } = await supabaseClient
-    .from("fasting_sessions")
-    .select("id, fast_name, started_at, ends_at, status")
-    .eq("user_id", user.id)
-    .order("started_at", { ascending: false })
-    .limit(30);
-
-  if (error) {
-    listHint.textContent = `Error: ${error.message}`;
-    sessionsTable.classList.add("hidden");
-    return;
-  }
-
-  sessionsBody.innerHTML = "";
-  for (const row of data) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${new Date(row.started_at).toLocaleString()}</td>
-      <td>${new Date(row.ends_at).toLocaleString()}</td>
-      <td>${row.fast_name}</td>
-      <td>${row.status}</td>
-    `;
-    sessionsBody.appendChild(tr);
-  }
-
-  sessionsTable.classList.remove("hidden");
-  listHint.textContent = data.length ? "" : "No sessions yet.";
-}
-
-async function startFastNow() {
-  timerMsg.textContent = "";
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) {
-    timerMsg.textContent = "Please sign in first.";
-    return;
-  }
-
-  // If you already have an active session, don't create a second one
-  await loadActiveSession();
-  if (activeSession && activeSession.status === "active") {
-    timerMsg.textContent = "You already have an active session. End it first.";
-    return;
-  }
-
-  const fastingSeconds = getFastingSeconds();
-  const eatingSeconds = 0; // optional: add later if you want eating window tracking
-  const fastName = getFastName();
-
-  const startedAt = new Date();
-  const endsAt = new Date(startedAt.getTime() + fastingSeconds * 1000);
-
-  const { data, error } = await supabaseClient
-    .from("fasting_sessions")
-    .insert([{
-      user_id: user.id,
-      fast_name: fastName,
-      fasting_seconds: fastingSeconds,
-      eating_seconds: eatingSeconds,
-      started_at: startedAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-      status: "active"
-    }])
-    .select("*")
     .single();
 
-  if (error) {
-    timerMsg.textContent = `Could not start: ${error.message}`;
-    return;
-  }
-
-  activeSession = data;
-  setStatus(true);
-  sessionMetaEl.textContent =
-    `${data.fast_name} • Started: ${new Date(data.started_at).toLocaleString()} • Ends: ${new Date(data.ends_at).toLocaleString()}`;
-  startTicking();
-  await loadSessions();
+  sessionData = data || null;
+  if (sessionData) startTimer();
 }
 
-async function endFast() {
-  timerMsg.textContent = "";
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) {
-    timerMsg.textContent = "Please sign in first.";
-    return;
-  }
+function startTimer() {
+  clearInterval(interval);
+  dot.classList.add("active");
+  statusText.textContent = "Active";
 
-  await loadActiveSession();
-  if (!activeSession) {
-    timerMsg.textContent = "No active session to end.";
-    return;
-  }
+  interval = setInterval(() => {
+    const now = Date.now();
+    const start = new Date(sessionData.started_at).getTime();
+    const end = new Date(sessionData.ends_at).getTime();
 
-  // mark as cancelled (or completed; your choice)
-  const { error } = await supabaseClient
+    const remaining = Math.max(0, end - now);
+    const total = end - start;
+
+    timerEl.textContent = format(remaining);
+    progressBar.style.width = `${100 - (remaining / total) * 100}%`;
+
+    if (remaining <= 0) finishFast();
+  }, 250);
+}
+
+async function finishFast() {
+  clearInterval(interval);
+  dot.classList.remove("active");
+  statusText.textContent = "Completed";
+
+  await supabase
     .from("fasting_sessions")
-    .update({ status: "cancelled" })
-    .eq("id", activeSession.id)
-    .eq("user_id", user.id);
+    .update({ status:"completed" })
+    .eq("id", sessionData.id);
 
-  if (error) {
-    timerMsg.textContent = `Could not end: ${error.message}`;
-    return;
-  }
-
-  clearTimerUI();
-  await loadSessions();
+  sessionData = null;
 }
 
-// Auth actions
-btnSignUp.addEventListener("click", async () => {
-  authMsg.textContent = "";
-  const email = emailEl.value.trim();
-  const password = passwordEl.value;
+document.getElementById("btnStart").onclick = async () => {
+  if (sessionData) return;
 
-  const { error } = await supabaseClient.auth.signUp({ email, password });
-  if (error) authMsg.textContent = error.message;
-  else authMsg.textContent = "Signup successful. If email confirmation is enabled, check your inbox.";
-  await refreshAuthUI();
-});
+  const hours = Number(preset.value);
+  const now = new Date();
+  const end = new Date(now.getTime() + hours * 3600 * 1000);
 
-btnSignIn.addEventListener("click", async () => {
-  authMsg.textContent = "";
-  const email = emailEl.value.trim();
-  const password = passwordEl.value;
+  const { data } = await supabase
+    .from("fasting_sessions")
+    .insert([{
+      fasting_seconds: hours * 3600,
+      eating_seconds: 0,
+      started_at: now,
+      ends_at: end,
+      status: "active"
+    }])
+    .select()
+    .single();
 
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) authMsg.textContent = error.message;
-  await refreshAuthUI();
-});
+  sessionData = data;
+  startTimer();
+};
 
-btnSignOut.addEventListener("click", async () => {
-  await supabaseClient.auth.signOut();
-  await refreshAuthUI();
-});
+document.getElementById("btnEnd").onclick = async () => {
+  if (!sessionData) return;
+  await supabase
+    .from("fasting_sessions")
+    .update({ status:"cancelled" })
+    .eq("id", sessionData.id);
 
-btnStartNow.addEventListener("click", startFastNow);
-btnEnd.addEventListener("click", endFast);
+  location.reload();
+};
 
-// react to auth changes
-supabaseClient.auth.onAuthStateChange(() => refreshAuthUI());
+function format(ms) {
+  const s = Math.floor(ms / 1000);
+  return [
+    Math.floor(s / 3600),
+    Math.floor((s % 3600) / 60),
+    s % 60
+  ].map(v => String(v).padStart(2,"0")).join(":");
+}
 
-// init
-refreshAuthUI();
-
+refreshUI();
