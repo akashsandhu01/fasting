@@ -1,158 +1,649 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Fasting Timer</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fasting</title>
 
-<style>
-:root {
-  --bg:#0b0f17;
-  --card:#121827;
-  --text:#e8eefc;
-  --muted:#94a3b8;
-  --accent:#60a5fa;
-  --good:#4ade80;
-  --bad:#fb7185;
-}
+  <style>
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1224;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --line: rgba(255,255,255,.10);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.62);
+      --muted2: rgba(255,255,255,.45);
+      --accent:#7DD3FC;         /* calm sky */
+      --accent2:#A7F3D0;        /* calm mint */
+      --good:#4ADE80;
+      --bad:#FB7185;
 
-* { box-sizing:border-box; font-family:system-ui; transition:.25s }
-body {
-  margin:0; background:var(--bg); color:var(--text);
-  min-height:100vh; display:flex; align-items:center; justify-content:center;
-}
+      --r: 18px;
+      --shadow: 0 30px 90px rgba(0,0,0,.55);
+      --shadow2: 0 18px 50px rgba(0,0,0,.35);
+    }
 
-.hidden { display:none !important; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 5%, rgba(125,211,252,.14), transparent 60%),
+        radial-gradient(900px 600px at 80% 0%, rgba(167,243,208,.10), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(125,211,252,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
 
-.card {
-  background:var(--card);
-  padding:28px;
-  border-radius:18px;
-  width:100%;
-  max-width:420px;
-  box-shadow:0 30px 80px rgba(0,0,0,.45);
-  animation: fadeUp .5s ease;
-}
+    a{color:inherit}
+    .wrap{
+      min-height:100%;
+      display:flex;
+      justify-content:center;
+      padding:18px 12px 26px;
+    }
 
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(20px) }
-  to { opacity:1; transform:none }
-}
+    .shell{
+      width:100%;
+      max-width:980px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
 
-h1 { margin:0 0 10px }
-p { color:var(--muted); font-size:14px }
+    /* Top bar */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 14px;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+      border-radius: var(--r);
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+    }
 
-input, select, button {
-  width:100%; padding:12px 14px;
-  border-radius:12px; border:none;
-  background:#0f172a; color:var(--text);
-  margin-top:10px;
-}
+    .brand{
+      display:flex; align-items:center; gap:10px;
+    }
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(125,211,252,.9), rgba(125,211,252,.0) 55%),
+        radial-gradient(circle at 70% 70%, rgba(167,243,208,.8), rgba(167,243,208,.0) 60%),
+        linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 16px 45px rgba(0,0,0,.35);
+    }
+    .brand h1{
+      margin:0;
+      font-size:15px;
+      letter-spacing:.2px;
+      font-weight:700;
+    }
+    .brand .sub{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:1px;
+    }
 
-button.primary {
-  background:linear-gradient(135deg,#60a5fa,#3b82f6);
-  font-weight:600;
-  cursor:pointer;
-}
-button.secondary {
-  background:#1e293b;
-}
+    .userchip{
+      display:flex; align-items:center; gap:10px; justify-content:flex-end;
+      font-size:12px; color:var(--muted);
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+    }
+    .dot{
+      width:9px; height:9px; border-radius:50%;
+      background: var(--bad);
+      opacity:.9;
+    }
+    .dot.on{
+      background: var(--good);
+      animation:pulse 1.35s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%{transform:scale(1); opacity:.55}
+      50%{transform:scale(1.12); opacity:1}
+      100%{transform:scale(1); opacity:.55}
+    }
 
-button:hover { transform:translateY(-1px) }
+    button{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 14px;
+      font-weight:650;
+      cursor:pointer;
+      transition: transform .16s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+    }
+    button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.09); }
+    button:active{ transform: translateY(0px); }
+    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
 
-.timer {
-  text-align:center;
-  font-size:42px;
-  margin:20px 0;
-  letter-spacing:1px;
-}
+    .btn-primary{
+      border: none;
+      background: linear-gradient(135deg, rgba(125,211,252,.95), rgba(167,243,208,.85));
+      color: rgba(0,0,0,.78);
+      box-shadow: 0 16px 50px rgba(125,211,252,.16);
+    }
+    .btn-ghost{
+      background: rgba(0,0,0,.12);
+    }
 
-.status {
-  display:flex; align-items:center; gap:8px;
-  justify-content:center;
-  font-size:14px; color:var(--muted);
-}
+    /* Views */
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--r);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+    }
 
-.dot {
-  width:10px; height:10px; border-radius:50%;
-  background:var(--bad);
-}
-.dot.active {
-  background:var(--good);
-  animation:pulse 1.4s infinite;
-}
+    .hidden{ display:none !important; }
 
-@keyframes pulse {
-  0%{opacity:.5} 50%{opacity:1} 100%{opacity:.5}
-}
+    /* Auth view */
+    .auth{
+      padding:18px;
+      max-width:520px;
+      margin: 10px auto 0;
+      width:100%;
+    }
+    .auth h2{
+      margin:0 0 6px;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .auth p{
+      margin:0 0 14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+    .field{
+      margin-top:10px;
+    }
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin: 0 0 6px;
+    }
+    input, select, textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding:11px 12px;
+      border-radius: 14px;
+      outline:none;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(125,211,252,.55);
+      box-shadow: 0 0 0 4px rgba(125,211,252,.10);
+    }
 
-.progress {
-  height:8px; background:#1e293b;
-  border-radius:999px; overflow:hidden;
-}
-.progress > div {
-  height:100%; width:0%;
-  background:linear-gradient(90deg,#4ade80,#22c55e);
-}
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .row > *{ flex:1 1 160px; }
 
-.topbar {
-  display:flex; justify-content:space-between; align-items:center;
-  margin-bottom:16px;
-}
-.topbar button {
-  width:auto; padding:8px 12px;
-}
-</style>
+    .msg{
+      margin-top:12px;
+      font-size:12px;
+      color: var(--muted);
+      min-height:16px;
+    }
+    .msg.error{ color: rgba(251,113,133,.95); }
+    .msg.ok{ color: rgba(74,222,128,.95); }
+
+    /* App layout */
+    .main{
+      display:grid;
+      gap:12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 920px){
+      .main{
+        grid-template-columns: 1.2fr .8fr;
+        align-items:start;
+      }
+    }
+
+    /* Tabs */
+    .tabs{
+      display:flex;
+      gap:8px;
+      padding:10px;
+      border-bottom:1px solid var(--line);
+    }
+    .tab{
+      flex:1;
+      padding:10px 10px;
+      border-radius: 14px;
+      border:1px solid transparent;
+      color: var(--muted);
+      background: transparent;
+      font-weight:700;
+    }
+    .tab.active{
+      color: var(--text);
+      border-color: rgba(255,255,255,.12);
+      background: rgba(0,0,0,.14);
+    }
+
+    .panel{
+      padding:14px;
+      animation: fadeUp .25s ease;
+    }
+    @keyframes fadeUp{
+      from{ opacity:0; transform: translateY(10px); }
+      to{ opacity:1; transform:none; }
+    }
+
+    .hero{
+      padding:16px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(135deg, rgba(125,211,252,.10), rgba(167,243,208,.07));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    .bigtime{
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin: 10px 0 6px;
+      text-align:center;
+    }
+    .meta{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .badge{
+      padding:7px 10px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.14);
+    }
+
+    /* Progress ring */
+    .ringwrap{
+      display:flex;
+      justify-content:center;
+      margin: 10px 0 6px;
+    }
+    .ring{
+      width: 220px;
+      height: 220px;
+      position:relative;
+      display:grid;
+      place-items:center;
+    }
+    .ring svg{ transform: rotate(-90deg); }
+    .ring .center{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      pointer-events:none;
+    }
+    .center .small{
+      font-size:12px;
+      color: var(--muted);
+    }
+
+    /* Controls */
+    .controls{
+      display:grid;
+      gap:10px;
+      margin-top: 12px;
+    }
+    .controls .grid2{
+      display:grid;
+      gap:10px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .hint{
+      margin-top:10px;
+      font-size:12px;
+      color: var(--muted);
+      line-height:1.45;
+    }
+
+    /* Insights */
+    .timeline{
+      display:grid;
+      gap:10px;
+      margin-top: 10px;
+    }
+    .step{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding:12px;
+      background: rgba(0,0,0,.14);
+    }
+    .step .top{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .step .t{
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+    .step .range{
+      font-size:12px;
+      color: var(--muted2);
+    }
+    .step .d{
+      margin-top:6px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+    .step.active{
+      border-color: rgba(125,211,252,.35);
+      background: linear-gradient(135deg, rgba(125,211,252,.10), rgba(0,0,0,.14));
+      box-shadow: 0 16px 40px rgba(125,211,252,.07);
+    }
+
+    /* History list */
+    .list{
+      display:grid;
+      gap:10px;
+      margin-top: 8px;
+    }
+    .item{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding:12px;
+      background: rgba(0,0,0,.14);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .item .left{
+      display:flex; flex-direction:column; gap:4px;
+      min-width:0;
+    }
+    .item .name{ font-weight:800; font-size:13px; }
+    .item .sub{ color:var(--muted); font-size:12px; }
+    .item .right{
+      text-align:right;
+      color:var(--muted);
+      font-size:12px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      white-space:nowrap;
+    }
+
+    /* Settings */
+    .setting{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding:12px;
+      background: rgba(0,0,0,.14);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .setting .k{
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .setting .k b{ font-size:13px; }
+    .setting .k span{ font-size:12px; color:var(--muted); line-height:1.35; }
+
+    /* Bottom nav for mobile */
+    .bottomnav{
+      position: sticky;
+      bottom: 10px;
+      display:flex;
+      gap:8px;
+      padding:10px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      border-radius: 18px;
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(12px);
+      margin-top: 2px;
+    }
+    @media (min-width: 920px){
+      .bottomnav{ display:none; }
+    }
+    .btab{
+      flex:1;
+      padding:11px 10px;
+      border-radius: 14px;
+      border:1px solid transparent;
+      color: var(--muted);
+      background: transparent;
+      font-weight:800;
+      font-size:12px;
+    }
+    .btab.active{
+      color: var(--text);
+      border-color: rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+    }
+
+    .sr{ position:absolute; left:-9999px; }
+  </style>
 </head>
 
 <body>
+  <div class="wrap">
+    <div class="shell">
 
-<!-- AUTH VIEW -->
-<div id="authView" class="card">
-  <h1>Welcome</h1>
-  <p>Sign in to start fasting</p>
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Fasting</h1>
+            <div class="sub">calm focus • steady progress</div>
+          </div>
+        </div>
 
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
+        <div class="userchip">
+          <span class="pill">
+            <span id="statusDot" class="dot"></span>
+            <span id="statusLabel">Signed out</span>
+          </span>
+          <button id="btnSignOut" class="btn-ghost hidden">Sign out</button>
+        </div>
+      </div>
 
-  <button id="btnSignIn" class="primary">Sign in</button>
-  <button id="btnSignUp" class="secondary">Create account</button>
+      <!-- AUTH VIEW -->
+      <div id="authView" class="card auth">
+        <h2>Welcome back</h2>
+        <p>Log in to start your fast, track history, and keep a steady routine with friends.</p>
 
-  <p id="authMsg"></p>
-</div>
+        <div class="row">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="email" placeholder="you@email.com" />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+          </div>
+        </div>
 
-<!-- APP VIEW -->
-<div id="appView" class="card hidden">
-  <div class="topbar">
-    <strong>Fasting Timer</strong>
-    <button id="btnSignOut" class="secondary">Sign out</button>
+        <div class="row" style="margin-top:10px">
+          <button id="btnSignIn" class="btn-primary">Sign in</button>
+          <button id="btnSignUp">Create account</button>
+        </div>
+
+        <div id="authMsg" class="msg"></div>
+
+        <div class="hint">
+          Tip: your data is private per account (RLS). If you ever share with friends later, we’ll do that with explicit invites.
+        </div>
+      </div>
+
+      <!-- APP VIEW -->
+      <div id="appView" class="card hidden">
+        <div class="tabs" role="tablist" aria-label="App tabs">
+          <button class="tab active" data-tab="timer" role="tab" aria-selected="true">Timer</button>
+          <button class="tab" data-tab="insights" role="tab" aria-selected="false">Insights</button>
+          <button class="tab" data-tab="history" role="tab" aria-selected="false">History</button>
+          <button class="tab" data-tab="settings" role="tab" aria-selected="false">Settings</button>
+        </div>
+
+        <div class="panel" id="panel-timer">
+          <div class="hero">
+            <div class="meta">
+              <span class="badge" id="badgePlan">Plan: 16h</span>
+              <span class="badge" id="badgeEnd">End: —</span>
+              <span class="badge" id="badgeStart">Start: —</span>
+            </div>
+
+            <div class="ringwrap">
+              <div class="ring" aria-label="Fasting progress">
+                <svg width="220" height="220" viewBox="0 0 220 220">
+                  <circle cx="110" cy="110" r="92" stroke="rgba(255,255,255,.10)" stroke-width="14" fill="none"></circle>
+                  <circle id="ringProgress" cx="110" cy="110" r="92"
+                          stroke="rgba(125,211,252,.95)"
+                          stroke-linecap="round"
+                          stroke-width="14"
+                          fill="none"
+                          stroke-dasharray="578"
+                          stroke-dashoffset="578"></circle>
+                </svg>
+
+                <div class="center">
+                  <div class="small" id="centerLabel">Ready when you are</div>
+                  <div class="bigtime" id="timeLeft">--:--:--</div>
+                  <div class="small" id="centerSub">Start a fast to begin</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <div class="grid2">
+                <div>
+                  <label for="presetHours">Fasting length</label>
+                  <select id="presetHours">
+                    <option value="12">12 hours</option>
+                    <option value="14">14 hours</option>
+                    <option value="16" selected>16 hours</option>
+                    <option value="18">18 hours</option>
+                    <option value="20">20 hours</option>
+                    <option value="24">24 hours</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="startMode">Start mode</label>
+                  <select id="startMode">
+                    <option value="now" selected>Start now</option>
+                    <option value="manual">I started earlier</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="manualStartWrap" class="hidden">
+                <label for="manualStart">Manual start time</label>
+                <input id="manualStart" type="datetime-local" />
+                <div class="hint">Use this if you began fasting earlier and want the timer to match.</div>
+              </div>
+
+              <div class="grid2">
+                <button id="btnStart" class="btn-primary">Start fast</button>
+                <button id="btnEnd" class="">End fast</button>
+              </div>
+
+              <div id="timerMsg" class="msg"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel hidden" id="panel-insights">
+          <div class="hint">
+            These are **general** milestones people use for motivation (not medical advice). Your experience can vary.
+          </div>
+
+          <div class="timeline" id="insightsList"></div>
+        </div>
+
+        <div class="panel hidden" id="panel-history">
+          <div class="hint" id="historyHint">Loading your sessions…</div>
+          <div class="list" id="historyList"></div>
+        </div>
+
+        <div class="panel hidden" id="panel-settings">
+          <div class="setting">
+            <div class="k">
+              <b>Motivation style</b>
+              <span>Calm, supportive prompts (no spam).</span>
+            </div>
+            <select id="motivationStyle" style="max-width:190px">
+              <option value="calm" selected>Calm</option>
+              <option value="pushy">More hype</option>
+            </select>
+          </div>
+
+          <div class="setting" style="margin-top:10px">
+            <div class="k">
+              <b>End session behavior</b>
+              <span>When you tap “End fast”, should it cancel or complete?</span>
+            </div>
+            <select id="endBehavior" style="max-width:190px">
+              <option value="cancelled" selected>Cancel</option>
+              <option value="completed">Complete</option>
+            </select>
+          </div>
+
+          <div class="setting" style="margin-top:10px">
+            <div class="k">
+              <b>Sign out</b>
+              <span>Ends your session on this device.</span>
+            </div>
+            <button id="btnSignOut2" class="btn-ghost">Sign out</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px">
+            Next-level upgrades we can add: streaks, eating window, reminders/notifications, and “friends” challenges.
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile bottom nav (nice app feel) -->
+      <div id="bottomNav" class="bottomnav hidden" aria-label="Bottom navigation">
+        <button class="btab active" data-tab="timer">Timer</button>
+        <button class="btab" data-tab="insights">Insights</button>
+        <button class="btab" data-tab="history">History</button>
+        <button class="btab" data-tab="settings">Settings</button>
+      </div>
+
+    </div>
   </div>
 
-  <select id="preset">
-    <option value="16">16 hours</option>
-    <option value="18">18 hours</option>
-    <option value="20">20 hours</option>
-    <option value="24">24 hours</option>
-  </select>
-
-  <div class="timer" id="timer">--:--:--</div>
-
-  <div class="status">
-    <div id="dot" class="dot"></div>
-    <span id="statusText">Inactive</span>
-  </div>
-
-  <div class="progress"><div id="progressBar"></div></div>
-
-  <button id="btnStart" class="primary">Start fast</button>
-  <button id="btnEnd" class="secondary">End fast</button>
-
-  <p id="appMsg"></p>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
-<script src="./app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
-
