@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fasting Timer (Auth + DB)</title>
+  <style>
+    :root { --bg:#0b0f17; --card:rgba(255,255,255,.06); --text:#e8eefc; --muted:rgba(232,238,252,.65); --line:rgba(255,255,255,.12); --accent:#60a5fa; --good:#4ade80; --bad:#fb7185; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .wrap{max-width:980px;margin:0 auto;padding:22px}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+    h1{font-size:20px;margin:0 0 10px}
+    h2{font-size:16px;margin:0 0 10px;color:var(--muted)}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input,select,button{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--text)}
+    button{cursor:pointer;background:rgba(96,165,250,.18);border-color:rgba(96,165,250,.35)}
+    button:hover{background:rgba(96,165,250,.28)}
+    .row{display:flex;gap:10px}
+    .row > *{flex:1}
+    .muted{color:var(--muted);font-size:12px}
+    .big{font-size:34px;font-weight:700;letter-spacing:.5px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
+    .ok{color:var(--good)}
+    .bad{color:var(--bad)}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left;font-size:13px}
+    th{color:var(--muted);font-weight:600}
+    .right{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="right">
+      <h1>Fasting Timer</h1>
+      <div class="pill"><span id="authState">Not signed in</span> <button id="btnSignOut" class="hidden" style="width:auto;padding:6px 10px;">Sign out</button></div>
+    </div>
+
+    <div class="grid">
+      <div class="card" id="authCard">
+        <h2>Login / Signup</h2>
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="email" type="email" placeholder="you@email.com" />
+          </div>
+          <div>
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnSignUp">Create account</button>
+          <button id="btnSignIn">Sign in</button>
+        </div>
+        <p class="muted" id="authMsg" style="margin-top:10px"></p>
+      </div>
+
+      <div class="card" id="timerCard">
+        <h2>Timer</h2>
+
+        <div class="row">
+          <div>
+            <label>Preset</label>
+            <select id="preset">
+              <option value="16:8">16:8</option>
+              <option value="18:6">18:6</option>
+              <option value="20:4">20:4</option>
+              <option value="24:0">24:0</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label>Custom fasting hours</label>
+            <input id="customFastHours" type="number" min="1" step="1" value="16" />
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="btnStartNow">Start fast now</button>
+          <button id="btnEnd">End / Cancel</button>
+        </div>
+
+        <div style="margin-top:14px">
+          <div class="muted">Current session</div>
+          <div class="big" id="timeLeft">--:--:--</div>
+          <div class="muted" id="sessionMeta">No active session</div>
+          <div class="pill" style="margin-top:10px"><span id="statusDot" class="bad">●</span> <span id="statusText">Inactive</span></div>
+        </div>
+
+        <p class="muted" id="timerMsg" style="margin-top:10px"></p>
+      </div>
+
+      <div class="card" style="grid-column:1/-1">
+        <h2>My sessions (from DB)</h2>
+        <div class="muted" id="listHint">Sign in to load your history.</div>
+        <div style="overflow:auto;margin-top:10px">
+          <table id="sessionsTable" class="hidden">
+            <thead>
+              <tr>
+                <th>Started</th>
+                <th>Ends</th>
+                <th>Fast</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="sessionsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
