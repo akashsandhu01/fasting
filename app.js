@@ -473,6 +473,11 @@ btnEnd.addEventListener("click", async () => {
 
 // ======================
 // 10) AUTH
+if (!email || !password || password.length < 6) {
+  setMsg(authMsg, "Password must be at least 6 characters.", "error");
+  return;
+}
+
 // ======================
 btnSignUp.addEventListener("click", async () => {
   setMsg(authMsg, "");
@@ -558,6 +563,7 @@ supabaseClient.auth.onAuthStateChange(() => {
 refreshAuthUI().catch((e) => {
   console.error(e);
 });
+
 
 
 
