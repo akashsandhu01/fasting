@@ -151,17 +151,21 @@ document.getElementById("btnStart").onclick = async () => {
   const start = new Date();
   const end = new Date(start.getTime() + hours * 3600 * 1000);
 
-  const { data, error } = await supabaseClient
-    .from("fasting_sessions")
-    .insert([{
-      fasting_seconds: hours * 3600,
-      eating_seconds: 0,
-      started_at: start,
-      ends_at: end,
-      status: "active"
-    }])
-    .select()
-    .single();
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+const { data, error } = await supabaseClient
+  .from("fasting_sessions")
+  .insert([{
+    user_id: user.id,              // ✅ REQUIRED FOR RLS
+    fasting_seconds: hours * 3600,
+    eating_seconds: 0,
+    started_at: start.toISOString(),
+    ends_at: end.toISOString(),
+    status: "active"
+  }])
+  .select()
+  .single();
+
 
   if (error) {
     appMsg.textContent = error.message;
@@ -200,5 +204,6 @@ function formatTime(ms) {
 ================================ */
 
 refreshUI();
+
 
 
