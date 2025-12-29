@@ -1,127 +1,156 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fasting Timer (Auth + DB)</title>
-  <style>
-    :root { --bg:#0b0f17; --card:rgba(255,255,255,.06); --text:#e8eefc; --muted:rgba(232,238,252,.65); --line:rgba(255,255,255,.12); --accent:#60a5fa; --good:#4ade80; --bad:#fb7185; }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-    .wrap{max-width:980px;margin:0 auto;padding:22px}
-    .grid{display:grid;grid-template-columns:1fr;gap:14px}
-    @media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
-    h1{font-size:20px;margin:0 0 10px}
-    h2{font-size:16px;margin:0 0 10px;color:var(--muted)}
-    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
-    input,select,button{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--text)}
-    button{cursor:pointer;background:rgba(96,165,250,.18);border-color:rgba(96,165,250,.35)}
-    button:hover{background:rgba(96,165,250,.28)}
-    .row{display:flex;gap:10px}
-    .row > *{flex:1}
-    .muted{color:var(--muted);font-size:12px}
-    .big{font-size:34px;font-weight:700;letter-spacing:.5px}
-    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
-    .ok{color:var(--good)}
-    .bad{color:var(--bad)}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left;font-size:13px}
-    th{color:var(--muted);font-weight:600}
-    .right{display:flex;justify-content:space-between;align-items:center;gap:10px}
-    .hidden{display:none!important}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fasting Timer</title>
+
+<style>
+:root {
+  --bg:#0b0f17;
+  --card:#121827;
+  --text:#e8eefc;
+  --muted:#94a3b8;
+  --accent:#60a5fa;
+  --good:#4ade80;
+  --bad:#fb7185;
+}
+
+* { box-sizing:border-box; font-family:system-ui; transition:.25s }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+}
+
+.hidden { display:none !important; }
+
+.card {
+  background:var(--card);
+  padding:28px;
+  border-radius:18px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
+  animation: fadeUp .5s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px) }
+  to { opacity:1; transform:none }
+}
+
+h1 { margin:0 0 10px }
+p { color:var(--muted); font-size:14px }
+
+input, select, button {
+  width:100%; padding:12px 14px;
+  border-radius:12px; border:none;
+  background:#0f172a; color:var(--text);
+  margin-top:10px;
+}
+
+button.primary {
+  background:linear-gradient(135deg,#60a5fa,#3b82f6);
+  font-weight:600;
+  cursor:pointer;
+}
+button.secondary {
+  background:#1e293b;
+}
+
+button:hover { transform:translateY(-1px) }
+
+.timer {
+  text-align:center;
+  font-size:42px;
+  margin:20px 0;
+  letter-spacing:1px;
+}
+
+.status {
+  display:flex; align-items:center; gap:8px;
+  justify-content:center;
+  font-size:14px; color:var(--muted);
+}
+
+.dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--bad);
+}
+.dot.active {
+  background:var(--good);
+  animation:pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+  0%{opacity:.5} 50%{opacity:1} 100%{opacity:.5}
+}
+
+.progress {
+  height:8px; background:#1e293b;
+  border-radius:999px; overflow:hidden;
+}
+.progress > div {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,#4ade80,#22c55e);
+}
+
+.topbar {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:16px;
+}
+.topbar button {
+  width:auto; padding:8px 12px;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="right">
-      <h1>Fasting Timer</h1>
-      <div class="pill"><span id="authState">Not signed in</span> <button id="btnSignOut" class="hidden" style="width:auto;padding:6px 10px;">Sign out</button></div>
-    </div>
 
-    <div class="grid">
-      <div class="card" id="authCard">
-        <h2>Login / Signup</h2>
-        <div class="row">
-          <div>
-            <label>Email</label>
-            <input id="email" type="email" placeholder="you@email.com" />
-          </div>
-          <div>
-            <label>Password</label>
-            <input id="password" type="password" placeholder="••••••••" />
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button id="btnSignUp">Create account</button>
-          <button id="btnSignIn">Sign in</button>
-        </div>
-        <p class="muted" id="authMsg" style="margin-top:10px"></p>
-      </div>
+<!-- AUTH VIEW -->
+<div id="authView" class="card">
+  <h1>Welcome</h1>
+  <p>Sign in to start fasting</p>
 
-      <div class="card" id="timerCard">
-        <h2>Timer</h2>
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
 
-        <div class="row">
-          <div>
-            <label>Preset</label>
-            <select id="preset">
-              <option value="16:8">16:8</option>
-              <option value="18:6">18:6</option>
-              <option value="20:4">20:4</option>
-              <option value="24:0">24:0</option>
-              <option value="custom">Custom</option>
-            </select>
-          </div>
-          <div>
-            <label>Custom fasting hours</label>
-            <input id="customFastHours" type="number" min="1" step="1" value="16" />
-          </div>
-        </div>
+  <button id="btnSignIn" class="primary">Sign in</button>
+  <button id="btnSignUp" class="secondary">Create account</button>
 
-        <div class="row">
-          <button id="btnStartNow">Start fast now</button>
-          <button id="btnEnd">End / Cancel</button>
-        </div>
+  <p id="authMsg"></p>
+</div>
 
-        <div style="margin-top:14px">
-          <div class="muted">Current session</div>
-          <div class="big" id="timeLeft">--:--:--</div>
-          <div class="muted" id="sessionMeta">No active session</div>
-          <div class="pill" style="margin-top:10px"><span id="statusDot" class="bad">●</span> <span id="statusText">Inactive</span></div>
-        </div>
-
-        <p class="muted" id="timerMsg" style="margin-top:10px"></p>
-      </div>
-
-      <div class="card" style="grid-column:1/-1">
-        <h2>My sessions (from DB)</h2>
-        <div class="muted" id="listHint">Sign in to load your history.</div>
-        <div style="overflow:auto;margin-top:10px">
-          <table id="sessionsTable" class="hidden">
-            <thead>
-              <tr>
-                <th>Started</th>
-                <th>Ends</th>
-                <th>Fast</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="sessionsBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+<!-- APP VIEW -->
+<div id="appView" class="card hidden">
+  <div class="topbar">
+    <strong>Fasting Timer</strong>
+    <button id="btnSignOut" class="secondary">Sign out</button>
   </div>
 
-  <!-- Supabase JS (CDN) -->
-  <script>
-  window.SUPABASE_URL = "{{ SUPABASE_URL }}";
-  window.SUPABASE_ANON_KEY = "{{ SUPABASE_ANON_KEY }}";
-</script>
+  <select id="preset">
+    <option value="16">16 hours</option>
+    <option value="18">18 hours</option>
+    <option value="20">20 hours</option>
+    <option value="24">24 hours</option>
+  </select>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./app.js"></script>
+  <div class="timer" id="timer">--:--:--</div>
+
+  <div class="status">
+    <div id="dot" class="dot"></div>
+    <span id="statusText">Inactive</span>
+  </div>
+
+  <div class="progress"><div id="progressBar"></div></div>
+
+  <button id="btnStart" class="primary">Start fast</button>
+  <button id="btnEnd" class="secondary">End fast</button>
+
+  <p id="appMsg"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./app.js"></script>
 </body>
 </html>
-
