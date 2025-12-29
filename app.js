@@ -2,12 +2,8 @@
    SUPABASE SETUP
 ================================ */
 
-const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL;
-const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error("Missing Supabase config");
-}
+const SUPABASE_URL = "https://gybhivuztvvjhxazzgtf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5YmhpdnV6dHZ2amh4YXp6Z3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMzQ1OTgsImV4cCI6MjA4MjYxMDU5OH0.tKkWQHc3b3mf92qljBbcv0IE86puzLVUA_fbWfSlehU";
 
 const supabaseClient = supabase.createClient(
   SUPABASE_URL,
@@ -204,4 +200,5 @@ function formatTime(ms) {
 ================================ */
 
 refreshUI();
+
 
