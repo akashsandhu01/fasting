@@ -483,10 +483,7 @@ btnSignUp.addEventListener("click", async () => {
   setMsg(authMsg, "");
   const email = (emailEl.value || "").trim();
   const password = passEl.value || "";
-if (!email || !password || password.length < 6) {
-  setMsg(authMsg, "Password must be at least 6 characters.", "error");
-  return;
-}
+
   const { error } = await supabaseClient.auth.signUp({ email, password });
   if (error) setMsg(authMsg, error.message, "error");
   else setMsg(authMsg, "Account created. You can sign in now.", "ok");
@@ -566,6 +563,7 @@ supabaseClient.auth.onAuthStateChange(() => {
 refreshAuthUI().catch((e) => {
   console.error(e);
 });
+
 
 
 
